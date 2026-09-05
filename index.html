@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback & Grievance Portal</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; }
+    
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 { font-size: 1.5rem; margin-bottom: 8px; color: #0f172a; }
+    p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 6px; }
+    
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .checkbox-group label { font-weight: normal; cursor: pointer; }
+
+    button {
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover { background-color: var(--primary-hover); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .status.success { background-color: #dcfce7; color: #166534; display: block; }
+    .status.error { background-color: #fee2e2; color: #991b1b; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Feedback & Grievance Portal</h2>
+    <p class="subtitle">Submit your concerns or suggestions directly to school management.</p>
+
+    <form id="submissionForm">
+      <div class="form-group">
+        <label for="role">I am a... *</label>
+        <select id="role" required>
+          <option value="" disabled selected>Select your role</option>
+          <option value="Parent">Parent / Guardian</option>
+          <option value="Teacher">Teacher / Staff</option>
+          <option value="Learner">Learner / Student</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="category">Category *</label>
+        <select id="category" required>
+          <option value="" disabled selected>Select submission type</option>
+          <option value="Feedback">General Feedback</option>
+          <option value="Comment">Comment / Suggestion</option>
+          <option value="Grievance">Grievance / Issue Report</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" placeholder="Enter your full name">
+        <div class="checkbox-group">
+          <input type="checkbox" id="isAnonymous" onchange="toggleNameInput(this)">
+          <label for="isAnonymous">Submit anonymously</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="message">Details / Message *</label>
+        <textarea id="message" rows="5" placeholder="Please describe your message..." required></textarea>
+      </div>
+
+      <button type="submit" id="submitBtn">Submit Entry</button>
+    </form>
+
+    <div id="statusMessage" class="status"></div>
+  </div>
+
+  <script>
+    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+    const SCRIPT_URL = 'https://script.google.com/u/0/home/projects/1RLqgc5MgsFvaVqJPAQyxhwCmCMUgG0GuyP0VpMW-jdzv4jnBHcknFYHi/edit';
+
+    function toggleNameInput(checkbox) {
+      const nameInput = document.getElementById('name');
+      if (checkbox.checked) {
+        nameInput.value = '';
+        nameInput.disabled = true;
+      } else {
+        nameInput.disabled = false;
+      }
+    }
+
+    document.getElementById('submissionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const statusMessage = document.getElementById('statusMessage');
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Submitting...';
+      statusMessage.className = 'status';
+      statusMessage.innerText = '';
+
+      const payload = {
+        role: document.getElementById('role').value,
+        category: document.getElementById('category').value,
+        name: document.getElementById('name').value,
+        isAnonymous: document.getElementById('isAnonymous').checked,
+        message: document.getElementById('message').value
+      };
+
+      // Sending data to Google Apps Script Backend
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Bypasses browser CORS restrictions for Google Apps Script
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Submit Entry';
+        statusMessage.className = 'status success';
+        statusMessage.innerText = 'Thank you! Your submission was recorded successfully.';
+        document.getElementById('submissionForm').reset();
+        document.getElementById('name').disabled = false;
+      })
+      .catch(error => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Submit Entry';
+        statusMessage.className = 'status error';
+        statusMessage.innerText = 'Submission failed. Please check your network and try again.';
+      });
+    });
+  </script>
+</body>
+</html>
